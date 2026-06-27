@@ -1,0 +1,2 @@
+DEBIT = "DEBIT"
+CREDIT = "CREDIT"

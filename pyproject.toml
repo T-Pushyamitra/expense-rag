@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "expense-rag"
+version = "0.1.0"
+description = "A modern Python project"
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.31.0",
+    "pydantic>=2.0",
+    "pandas ==2.2.0",
+    "pdfplumber==0.11.0" 
+]
+
+[tool.setuptools.packages.find]
+include = ["src*"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "black>=24.0",
+    "mypy>=2.1",
+]
+
+[tool.mypy]
+strict = true
+disallow_untyped_defs = false
+
+[project.urls]
+Homepage = "https://github.com"
+Documentation = "https://readthedocs.io"
+Changelog = "https://github.com/blob/main/CHANGELOG.md"

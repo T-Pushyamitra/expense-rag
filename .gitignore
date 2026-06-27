@@ -1,0 +1,9 @@
+/build
+.rag-venv/
+*venv/
+.venv/
+*.egg-info
+__pycache__
+# Personal files
+/learning_docs
+
