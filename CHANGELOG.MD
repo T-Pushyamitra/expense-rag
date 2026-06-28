@@ -15,3 +15,11 @@ All notable changes to this project will be documented in this file.
 ## 0.3.0 - 2026-06-27
 ### Changed
 - Completed parsing HDFC bank statment
+
+## 0.4.0 - 2026-06-28
+### Added 
+- Added parser for Axis bank statement
+- Add .env, and resource/statements 
+
+### Changed 
+- Pdf Parser (pdf_parser) should accept password as none

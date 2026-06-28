@@ -4,9 +4,9 @@ import sys
 
 def setup_logger():
 
-    logger = logging.getLogger("my_project")
+    logger = logging.getLogger("exepnse-rag")
 
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     # Avoid duplicate handlers
     if logger.handlers:

@@ -1,9 +1,17 @@
+# Venv
 /build
-.rag-venv/
 *venv/
 .venv/
+
+# Build Files
 *.egg-info
 __pycache__
+
 # Personal files
 /learning_docs
 
+# Bank Statements
+/resources/statements
+
+# Env files
+.env*

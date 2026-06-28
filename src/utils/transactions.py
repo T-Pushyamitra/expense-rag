@@ -27,6 +27,7 @@ class Transaction:
     def is_empty(self) -> bool:
         return not self.text
 
+    # FIX: Remove this 
     @property
     def is_header(self) -> bool:
         value = self.text.lower()
