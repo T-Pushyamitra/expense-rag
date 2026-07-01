@@ -1,10 +1,10 @@
-from .parser_abstract import Parser
+from .statement_parser_abstract import StatementParser
 import pdfplumber
 import logging
 
 logger = logging.getLogger("exepnse-rag")
 
-class PDFParser(Parser):
+class PDFStatementParser(StatementParser):
     def __init__(self) -> None:
         super().__init__("PDF Parser")
 
@@ -23,9 +23,7 @@ class PDFParser(Parser):
             }
         
     def parse(self, file_path: str, password: str, **table_settings_args):
-        table_settings = {}
-        if table_settings_args:
-            table_settings = self._get_table_settings(table_settings_args)
+        table_settings = self._get_table_settings(table_settings_args)        
 
         total_tables = 0
         total_rows = 0
@@ -43,9 +41,7 @@ class PDFParser(Parser):
         logger.info(f"Extracted {total_tables} tables and {total_rows} non-empty rows from the PDF.")
     
     def get_last_page(self, file_path: str, password: str, **table_settings_args):
-        table_settings = {}
-        if table_settings_args:
-            table_settings = self._get_table_settings(table_settings_args)
+        table_settings = self._get_table_settings(table_settings_args)
 
         with pdfplumber.open(file_path, password=password) as pdf:
             last_page = pdf.pages[-1]

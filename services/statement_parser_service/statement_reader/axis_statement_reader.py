@@ -1,37 +1,38 @@
 import logging
 import re
 from datetime import datetime
-
-from src.utils.transactions import Transaction
-
-from .parser.parser_factory import ParserFactory
-from .statement_reader_abstract import StatementReader
 from typing import Optional, List, Tuple
-from src.utils.constants import DEBIT, CREDIT
 
-BAD_ROW_KEYWORDS = {'transaction', 'closing'}
+from ..transaction import Transaction
+# from ..category import categorize
+from ..parser import StatementParserFactory, StatementParser
+from ..statement_reader.statement_reader_abstract import StatementReader
+
+from ..utils.constants import DEBIT, CREDIT
+
 
 logger = logging.getLogger("exepnse-rag")
 
 class AxisStatementReader(StatementReader):
     
-    datetime_format: str = "%d-%m-%Y"
+    DATETIME_FORMAT: str = "%d-%m-%Y"
     DATE_REGEX: str = r"(?<!\d)\d{2}-\d{2}-\d{4}(?!\d)"
+    BAD_ROW_KEYWORDS = {'transaction', 'closing'}
     
     
     def __init__(self, file_path: str, password: str = None):
         super().__init__()
         self.file_path: str = file_path
-        self.__password: str = password
+        self._password: str = password
         self.transactions: List[Transaction] = []
-        self._parser: ParserFactory = ParserFactory.get_parser(file_path.split('.')[-1])
+        self._parser: StatementParser = StatementParserFactory.get_parser(file_path.split('.')[-1])
         self.opening_blanance = 0.0
     
     def reader(self) -> List[Transaction]:
         if self._parser is None:
             raise ValueError(f"Unsupported file type for {self.file_path}")
 
-        rows = self._parser.parse(self.file_path, self.__password)
+        rows = self._parser.parse(self.file_path, self._password, vertical_strategy = "lines", horizontal_strategy = "lines")
                 
         self._parse_transaction_rows(rows)
         self.convert_transaction()
@@ -56,7 +57,7 @@ class AxisStatementReader(StatementReader):
                 if not date:
                     raise Exception("No date found for transaction")
 
-                transaction.date = datetime.strptime(date, self.datetime_format)
+                transaction.date = datetime.strptime(date, self.DATETIME_FORMAT)
                 transaction.amount = self.float_amount(cols[-2])
                 transaction.balance = self.float_amount(cols[-1])
                 
@@ -70,18 +71,11 @@ class AxisStatementReader(StatementReader):
                 
                 if not(bool(transaction.date) and bool(transaction.amount) and bool(transaction.balance) and bool(transaction.narration)):
                     raise Exception(f"Transaction failed {transaction.columns}")
-                logger.debug(transaction)
+                
+                # transaction.transaction_category = categorize(transaction.narration)                
             except ValueError as e:
                 print(e)
 
-    @staticmethod
-    def _is_bad_row(row: Transaction) -> bool:
-        return any(k in row.text.lower() for k in BAD_ROW_KEYWORDS)
-    
-    @staticmethod
-    def float_amount(amount) -> float:
-        return float(amount.replace(",", ""))
-    
     def _parse_transaction_rows(self, rows):
         current_transaction: Transaction = None
         
@@ -105,7 +99,7 @@ class AxisStatementReader(StatementReader):
                     self.transactions.append(current_transaction)
                 current_transaction = row  
             
-            if found_bad_row or self._is_bad_row(row):
+            if found_bad_row or self._is_bad_row(row, self.BAD_ROW_KEYWORDS):
                 found_bad_row = True
                 row.mark_as_bad_row
                 

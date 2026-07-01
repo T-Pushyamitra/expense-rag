@@ -1,46 +1,31 @@
 import logging
 import re
 from datetime import datetime
-
-from src.utils.transactions import Transaction
-
-from .parser.parser_factory import ParserFactory
-from .statement_reader_abstract import StatementReader
 from typing import Optional, List
-from src.utils.constants import DEBIT, CREDIT
 
-BAD_ROW_KEYWORDS = {'closingbalance', 'account', 'opening'}
+from ..transaction import Transaction
+# from ..category import categorize
+from ..parser import StatementParserFactory, StatementParser
+from ..statement_reader.statement_reader_abstract import StatementReader
+
+from ..utils.constants import DEBIT, CREDIT
+
 
 logger = logging.getLogger("exepnse-rag")
 
 class HDFCStatementReader(StatementReader):
     
-    datetime_format: str = "%d/%m/%y"
+    DATETIME_FORMAT: str = "%d/%m/%y"
     DATE_REGEX: str = r"(?<!\d)\d{2}/\d{2}/\d{2}(?!\d)"
+    BAD_ROW_KEYWORDS = {'closingbalance', 'account', 'opening'}
     
     
     def __init__(self, file_path: str, password: str = None):
         super().__init__()
         self.file_path: str = file_path
-        self.__password: str = password
+        self._password: str = password
         self.transactions: List[Transaction] = []
-        self._parser: ParserFactory = ParserFactory.get_parser(file_path.split('.')[-1])
-    
-    @property
-    def key_columns(self) -> list[str]:
-        return ["date", "narration", "reference", "value_date", "withdrawal", "deposit", "balance"]
-    
-    @staticmethod
-    def normalize_row(row) -> str:
-        return "".join(row).lower()
-    
-    @staticmethod
-    def _is_bad_row(row: Transaction) -> bool:
-        return any(k in row.text.lower() for k in BAD_ROW_KEYWORDS)
-    
-    @staticmethod
-    def float_amount(amount) -> float:
-        return float(amount.replace(",", ""))
+        self._parser: StatementParser = StatementParserFactory.get_parser(file_path.split('.')[-1])
     
     def find_date(self, text) -> Optional[str]:
         match = re.search(self.DATE_REGEX, text)
@@ -52,7 +37,7 @@ class HDFCStatementReader(StatementReader):
         if self._parser is None:
             raise ValueError(f"Unsupported file type for {self.file_path}")
 
-        rows = self._parser.parse(self.file_path, self.__password)
+        rows = self._parser.parse(self.file_path, self._password)
                 
         self._parse_transaction_rows(rows)
         self.convert_transaction()
@@ -60,9 +45,9 @@ class HDFCStatementReader(StatementReader):
     
     def get_opening_balance(self) -> Optional[float]:
         OPENING_BALANCE = "opening"
-        table = self._parser.get_last_page(self.file_path, self.__password)
+        table = self._parser.get_last_page(self.file_path, self._password)
         
-        idx = [idx for idx, row in enumerate(table) if OPENING_BALANCE in self.normalize_row(row)][0]
+        idx = [idx for idx, row in enumerate(table) if row and OPENING_BALANCE in self.normalize_row(row)][0]
         for col in table[idx+1]:
             if col:
                 return self.float_amount(col)
@@ -81,7 +66,7 @@ class HDFCStatementReader(StatementReader):
                 if not date:
                     raise Exception("No date found for transaction")
 
-                transaction.date = datetime.strptime(date, self.datetime_format)
+                transaction.date = datetime.strptime(date, self.DATETIME_FORMAT)
                 transaction.amount = self.float_amount(cols[-2])
                 transaction.balance = self.float_amount(cols[-1])
                 transaction.narration = "".join(transaction.columns[:-2])
@@ -94,20 +79,21 @@ class HDFCStatementReader(StatementReader):
                 transaction.narration = transaction.narration.replace(date, "")
                 is_debit = transaction.balance < current_balance
                 transaction.transaction_type = DEBIT if is_debit else CREDIT
-                    
+                current_balance = transaction.balance
+                
                 if not(bool(transaction.date) and bool(transaction.amount) and bool(transaction.balance) and bool(transaction.narration)):
                     raise Exception(f"Transaction failed {transaction.columns}")
-                logger.info(transaction)
+                
+                # transaction.transaction_category = categorize(transaction.narration)                
             except ValueError as e:
                 print(e)
 
     def _parse_transaction_rows(self, rows):
         current_transaction: Transaction = None
-        
         found_bad_row = False        
         previous_row: Transaction = None
         
-        for idx, _row in enumerate(rows):
+        for _row in rows:
             row = Transaction(_row)
             
             if row.is_empty:
@@ -120,7 +106,7 @@ class HDFCStatementReader(StatementReader):
                     self.transactions.append(current_transaction)
                 current_transaction = row  
             
-            if found_bad_row or self._is_bad_row(row):
+            if found_bad_row or self._is_bad_row(row, self.BAD_ROW_KEYWORDS):
                 found_bad_row = True
                 row.mark_as_bad_row
                 if current_transaction and "From :" in previous_row.text:
@@ -133,4 +119,3 @@ class HDFCStatementReader(StatementReader):
         
         # Last transaction
         self.transactions.append(current_transaction)
-        

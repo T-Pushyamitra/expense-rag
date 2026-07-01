@@ -1,34 +1,47 @@
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
-[project]
+[tool.poetry]
 name = "expense-rag"
-version = "0.1.0"
-description = "A modern Python project"
-requires-python = ">=3.10"
-dependencies = [
-    "requests>=2.31.0",
-    "pydantic>=2.0",
-    "pandas ==2.2.0",
-    "pdfplumber==0.11.0" 
+version = "1.0.0"
+description = "Expense RAG"
+authors = ["Thammieneni Pushyamitra <thammienenipushyamitra@gmail.com>"]
+readme = "README.md"
+
+packages = [
+    { include = "statement_parser_service", from = "services" }
 ]
 
-[tool.setuptools.packages.find]
-include = ["src*"]
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.0",
-    "black>=24.0",
-    "mypy>=2.1",
-]
+fastapi = ">=0.110"
+uvicorn = ">=0.29"
+pydantic = ">=2.0"
+requests = ">=2.31.0"
+pandas = "2.2.0"
+pdfplumber = "0.11.0"
+python-dotenv = "1.0.0"
+psycopg2-binary = ">=2.9.9"
+python-multipart = "*"
+
+# shared library
+common-lib = {path = "common-lib"}
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.0"
+black = ">=24.0"
+mypy = ">=2.1"
 
 [tool.mypy]
 strict = true
 disallow_untyped_defs = false
 
-[project.urls]
-Homepage = "https://github.com"
-Documentation = "https://readthedocs.io"
-Changelog = "https://github.com/blob/main/CHANGELOG.md"
+[tool.poetry.scripts]
+statement-parser = "services.statement_parser_service.main:run"
+
+[tool.poetry.urls]
+Homepage = "https://github.com/T-Pushyamitra/expense-rag"
+Documentation = "https://github.com/T-Pushyamitra/expense-rag/blob/main/docs"
+Changelog = "https://github.com/T-Pushyamitra/expense-rag/blob/main/CHANGELOG.MD"
+
+[build-system]
+requires = ["poetry-core>=2.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,28 @@
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: database
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: transactions
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - .infrastructure/postgres/parser-service-init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  postgres_data:
+  ollama_data:
