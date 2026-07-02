@@ -3,7 +3,7 @@ import re
 from datetime import datetime
 from typing import Optional, List, Tuple
 
-from ..transaction import Transaction
+from common_lib import Transaction
 # from ..category import categorize
 from ..parser import StatementParserFactory, StatementParser
 from ..statement_reader.statement_reader_abstract import StatementReader
@@ -24,19 +24,25 @@ class AxisStatementReader(StatementReader):
         super().__init__()
         self.file_path: str = file_path
         self._password: str = password
-        self.transactions: List[Transaction] = []
         self._parser: StatementParser = StatementParserFactory.get_parser(file_path.split('.')[-1])
         self.opening_blanance = 0.0
     
     def reader(self) -> List[Transaction]:
+        document_id = self.file_path.capitalize().split('/')[-1] + str(uuid.uuid4())
+
+        metadata = {"document_id": document_id, "file_name": self.file_path.split('/')[-1], "pages": {}}
+        page_number = 1
         if self._parser is None:
             raise ValueError(f"Unsupported file type for {self.file_path}")
 
-        rows = self._parser.parse(self.file_path, self._password, vertical_strategy = "lines", horizontal_strategy = "lines")
-                
-        self._parse_transaction_rows(rows)
-        self.convert_transaction()
-        return self.transactions
+        table = self._parser.parse(self.file_path, self._password)
+        
+        for rows in table:
+            transactions = self._parse_transaction_rows(rows)
+            metadata["pages"][f"1-{page_number}"] = len(transactions)
+            page_number += 1
+            
+        return metadata
     
     def find_date(self, text) -> Optional[Tuple[int, int]]:
         match = re.search(self.DATE_REGEX, text)
@@ -44,10 +50,10 @@ class AxisStatementReader(StatementReader):
             return match.group()
         return None
 
-    def convert_transaction(self) -> None:
+    def convert_transaction(self, transactions) -> None:
         current_balance = self.opening_blanance
         
-        for transaction in self.transactions:
+        for transaction in transactions:
             try:
                 cols = transaction.non_empty_columns()[:-1]
                 date = None
@@ -72,6 +78,7 @@ class AxisStatementReader(StatementReader):
                 if not(bool(transaction.date) and bool(transaction.amount) and bool(transaction.balance) and bool(transaction.narration)):
                     raise Exception(f"Transaction failed {transaction.columns}")
                 
+                return transaction
                 # transaction.transaction_category = categorize(transaction.narration)                
             except ValueError as e:
                 print(e)
@@ -80,6 +87,7 @@ class AxisStatementReader(StatementReader):
         current_transaction: Transaction = None
         
         found_bad_row = False        
+        transactions = []
         
         for idx, _row in enumerate(rows):
             row = Transaction(_row)
@@ -96,7 +104,7 @@ class AxisStatementReader(StatementReader):
             if row.is_transaction(self.find_date):
                 found_bad_row = False
                 if current_transaction:
-                    self.transactions.append(current_transaction)
+                    transactions.append(self._convert_transaction([current_transaction]))
                 current_transaction = row  
             
             if found_bad_row or self._is_bad_row(row, self.BAD_ROW_KEYWORDS):
@@ -107,4 +115,5 @@ class AxisStatementReader(StatementReader):
                 current_transaction.add_child(row)
                     
         # Last transaction
-        self.transactions.append(current_transaction)
+        transactions.append(self._convert_transaction([current_transaction]))
+        return transactions

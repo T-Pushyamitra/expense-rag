@@ -2,38 +2,74 @@
 
 All notable changes to this project will be documented in this file.
 
-## statement-parser-service 0.1.0 - 2026-06-14
-### Added
-- Added mypy to project for checking type hint
-- Added .gitignore
-- Added src/parser/parser_impl.py
+## Expense RAG 1.0.2 - 2026-07-02
 
-## statement-parser-service 0.2.0 - 2026-06-19
-### Added
-- Introduced the initial bank statement parser (Step 0) with support for HDFC Bank statements.
+### Statement Parser Service 0.6.0
+#### Changed
+- Parser now returns transactions page by page using generators.
+- Statement Reader now returns document metadata (`document_id`, `document`, and page information).
 
-## statement-parser-service 0.3.0 - 2026-06-27
-### Changed
-- Completed parsing HDFC bank statment
+### Common Library 0.2.0
+#### Changed
+- Moved the `Transaction` model to `common-lib`.
 
-## statement-parser-service 0.4.0 - 2026-06-28
-### Added 
-- Added parser for Axis bank statement
-- Add .env, and resource/statements 
+### Main Application
+#### Added
+- Added rabbit mq container
 
-### Changed 
-- Pdf Parser (pdf_parser) should accept password as none
+## Expense RAG 1.0.1 - 2026-07-01
 
-## statement-parser-service 0.4.1 - 2026-06-28
-### Fixed
-- Pdf parser table settings were static
-- HDFC parser, current balance was not updated after each transaction
+### Main Application
+#### Added
+- Added project documentation.
+- Added Poetry for dependency management.
+
 
 ## Expense RAG 1.0.0 - 2026-06-30
-### Changed 
-- Shifted to mono service to microservice
 
-## Expense RAG 1.0.1 - 2026-06-01
-### Added
-- Added docs
-- Added poetry to project
+### Architecture
+#### Changed
+- Migrated from a monolithic service to a microservices architecture.
+
+
+## Expense RAG 0.4.1 - 2026-06-28
+
+### Statement Parser Service 0.5.0
+#### Fixed
+- Fixed static PDF parser table extraction settings.
+- Fixed HDFC parser to update the current balance after every transaction.
+
+
+## Expense RAG 0.4.0 - 2026-06-28
+
+### Statement Parser Service 0.4.0
+#### Added
+- Added support for Axis Bank statements.
+- Added `.env`.
+- Added `resources/statements`.
+
+#### Changed
+- Updated the PDF parser to accept `None` as the password.
+
+
+## Expense RAG 0.3.0 - 2026-06-27
+
+### Statement Parser Service 0.3.0
+#### Changed
+- Completed the HDFC Bank statement parser.
+
+
+## Expense RAG 0.2.0 - 2026-06-19
+
+### Statement Parser Service 0.2.0
+#### Added
+- Introduced the initial HDFC Bank statement parser.
+
+
+## Expense RAG 0.1.0 - 2026-06-14
+
+### Statement Parser Service 0.1.0
+#### Added
+- Added mypy for static type checking.
+- Added `.gitignore`.
+- Added `src/parser/parser_impl.py`.

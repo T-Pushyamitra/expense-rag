@@ -1,9 +1,11 @@
 import logging
 import re
+import uuid
 from datetime import datetime
 from typing import Optional, List
 
-from ..transaction import Transaction
+from common_lib import Transaction
+
 # from ..category import categorize
 from ..parser import StatementParserFactory, StatementParser
 from ..statement_reader.statement_reader_abstract import StatementReader
@@ -24,7 +26,6 @@ class HDFCStatementReader(StatementReader):
         super().__init__()
         self.file_path: str = file_path
         self._password: str = password
-        self.transactions: List[Transaction] = []
         self._parser: StatementParser = StatementParserFactory.get_parser(file_path.split('.')[-1])
     
     def find_date(self, text) -> Optional[str]:
@@ -34,14 +35,21 @@ class HDFCStatementReader(StatementReader):
         return None
     
     def reader(self) -> List[Transaction]:
+        document_id = self.file_path.capitalize().split('/')[-1] + str(uuid.uuid4())
+
+        metadata = {"document_id": document_id, "file_name": self.file_path.split('/')[-1], "pages": {}}
+        page_number = 1
         if self._parser is None:
             raise ValueError(f"Unsupported file type for {self.file_path}")
 
-        rows = self._parser.parse(self.file_path, self._password)
-                
-        self._parse_transaction_rows(rows)
-        self.convert_transaction()
-        return self.transactions
+        table = self._parser.parse(self.file_path, self._password)
+        
+        for rows in table:
+            transactions = self._parse_transaction_rows(rows)
+            metadata["pages"][f"1-{page_number}"] = len(transactions)
+            page_number += 1
+            
+        return metadata
     
     def get_opening_balance(self) -> Optional[float]:
         OPENING_BALANCE = "opening"
@@ -53,10 +61,10 @@ class HDFCStatementReader(StatementReader):
                 return self.float_amount(col)
         return None
 
-    def convert_transaction(self) -> None:
+    def _convert_transaction(self, transactions) -> Optional[Transaction]:
         current_balance = self.get_opening_balance()
         
-        for transaction in self.transactions:
+        for transaction in transactions:
             try:
                 cols = transaction.non_empty_columns()
                 date = None
@@ -84,15 +92,17 @@ class HDFCStatementReader(StatementReader):
                 if not(bool(transaction.date) and bool(transaction.amount) and bool(transaction.balance) and bool(transaction.narration)):
                     raise Exception(f"Transaction failed {transaction.columns}")
                 
+                return transaction
                 # transaction.transaction_category = categorize(transaction.narration)                
             except ValueError as e:
                 print(e)
 
-    def _parse_transaction_rows(self, rows):
+    def _parse_transaction_rows(self, rows) -> List[Transaction]:
         current_transaction: Transaction = None
         found_bad_row = False        
         previous_row: Transaction = None
         
+        transactions = []
         for _row in rows:
             row = Transaction(_row)
             
@@ -103,7 +113,7 @@ class HDFCStatementReader(StatementReader):
             if row.is_transaction(self.find_date):
                 found_bad_row = False
                 if current_transaction:
-                    self.transactions.append(current_transaction)
+                    transactions.append(self._convert_transaction([current_transaction]))
                 current_transaction = row  
             
             if found_bad_row or self._is_bad_row(row, self.BAD_ROW_KEYWORDS):
@@ -118,4 +128,6 @@ class HDFCStatementReader(StatementReader):
             previous_row = row
         
         # Last transaction
-        self.transactions.append(current_transaction)
+        transactions.append(self._convert_transaction([current_transaction]))
+        
+        return transactions

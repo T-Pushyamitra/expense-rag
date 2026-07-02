@@ -22,7 +22,7 @@ SERVICE_VERSION = (
 app = FastAPI(
     title="Statement Parser Service",
     description="A service for parsing financial statements",
-    version="0.1.0"
+    version=SERVICE_VERSION
 )
 
 
@@ -46,7 +46,7 @@ async def parse(file: UploadFile | None = File(...), password: str = 201150838):
     try:
         # create temporary directory
         temp_dir = Path(tempfile.mkdtemp())
-
+        
         # create temp file path
         file_path = temp_dir / file.filename
 
@@ -57,10 +57,11 @@ async def parse(file: UploadFile | None = File(...), password: str = 201150838):
                 buffer
             )
         statementReader = StatementReaderFactory.get_reader('Hdfc', str(file_path), password)
-        transcations = statementReader.reader()
+        metadata = statementReader.reader()
+
         return {
             "Message": "Success",
-            "transcations": len(transcations)
+            "metadata": metadata
         }
     except Exception as e:
         return {"error": str(e)}

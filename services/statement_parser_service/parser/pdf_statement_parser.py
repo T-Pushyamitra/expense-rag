@@ -2,6 +2,8 @@ from .statement_parser_abstract import StatementParser
 import pdfplumber
 import logging
 
+from typing import List, Generator
+
 logger = logging.getLogger("exepnse-rag")
 
 class PDFStatementParser(StatementParser):
@@ -22,24 +24,17 @@ class PDFStatementParser(StatementParser):
                "text_y_tolerance": settings.get("text_y_tolerance", 3),
             }
         
-    def parse(self, file_path: str, password: str, **table_settings_args):
+    def parse(self, file_path: str, password: str, **table_settings_args) -> Generator[List[List[str]]]:
         table_settings = self._get_table_settings(table_settings_args)        
 
-        total_tables = 0
-        total_rows = 0
         with pdfplumber.open(file_path, password=password) as pdf:
             for i, page in enumerate(pdf.pages):
                 table = page.extract_table(table_settings)
                 if not table:
                     continue
+                logger.debug(f"Page {i+1}: Extracted table with {len(table)} rows")
+                yield table
 
-                total_tables += 1
-                for row in table:
-                    total_rows += 1
-                    yield row
-
-        logger.info(f"Extracted {total_tables} tables and {total_rows} non-empty rows from the PDF.")
-    
     def get_last_page(self, file_path: str, password: str, **table_settings_args):
         table_settings = self._get_table_settings(table_settings_args)
 

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, Tuple, Any
 import re
 
-from ..transaction import Transaction
+from common_lib import Transaction
 
 class StatementReader(ABC):
     @abstractmethod
