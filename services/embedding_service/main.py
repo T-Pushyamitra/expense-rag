@@ -1,19 +1,19 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI
 from dotenv import load_dotenv
 import os
 
 from pathlib import Path
-import tempfile
-import shutil
 import uvicorn
 
-from common_lib import setup_logger
-
-load_dotenv()
 
 from pathlib import Path
-from .ollama.get_embedding import embed
 
+from services.embedding_service.settings import settings
+from .ollama import EmbeddingService
+from common_lib import Transaction
+from typing import List
+from .settings import SETTINGS
+from pydantic import BaseModel
 
 SERVICE_VERSION = (
     Path(__file__).parent / "VERSION"
@@ -21,16 +21,17 @@ SERVICE_VERSION = (
     
 
 app = FastAPI(
-    title="Embedding Service",
-    description="A service for generating embeddings",
+    title=SETTINGS.app_name,
+    description=SETTINGS.app_description,
     version=SERVICE_VERSION
 )
 
+embedding_service = EmbeddingService(base_url=SETTINGS.ollama_api_embedding_service_url)
 
 @app.get("/")
 def root():
     return {
-        "service": "embedding-service",
+        "service": SETTINGS.app_name,
         "status": "running"
     }
 
@@ -41,17 +42,21 @@ def health_check():
         "status": "ok"
     }
 
+class BatchEmbedRequest(BaseModel):
+    transactions: list
 
-@app.post("/embed")
-async def embed_text(TransactionText: str):
-    embedding = embed(TransactionText)
-    return {"embedding": embedding}
+@app.post("/transactions/embed/batch")
+async def embed_text(request: BatchEmbedRequest):
+    for tx in request.transactions:
+        embedding_service.embed_transaction(tx)
+    return "Embeddings generated for all transactions", None
 
 
 def run():
     uvicorn.run(
-        "services.embeddings_service.main:app",
+        "services.embedding_service.main:app",
         host="0.0.0.0",
-        port=int(os.getenv("PORT", 8001)),
-        reload=True
+        port=int(os.getenv("PORT", SETTINGS.app_port)),
+        reload=True,
+        reload_dirs=["services/embedding_service", "common_lib"]
     )

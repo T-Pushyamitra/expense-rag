@@ -6,7 +6,8 @@ authors = ["Thammieneni Pushyamitra <thammienenipushyamitra@gmail.com>"]
 readme = "README.md"
 
 packages = [
-    { include = "statement_parser_service", from = "services" }
+    { include = "statement_parser_service", from = "services" },
+    { include = "embedding_service", from = "services" }
 ]
 
 [tool.poetry.dependencies]
@@ -24,6 +25,9 @@ python-multipart = "*"
 
 # shared library
 common-lib = {path = "common-lib"}
+httpx = "^0.28.1"
+pydantic-settings = "^2.14.2"
+sqlmodel = "^0.0.39"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.0"
@@ -36,6 +40,7 @@ disallow_untyped_defs = false
 
 [tool.poetry.scripts]
 statement-parser = "services.statement_parser_service.main:run"
+embedding-service = "services.embedding_service.main:run"
 
 [tool.poetry.urls]
 Homepage = "https://github.com/T-Pushyamitra/expense-rag"

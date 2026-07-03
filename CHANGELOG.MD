@@ -1,6 +1,17 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Expense RAG 1.1.0 - 2026-07-04
+
+### Statement Parser Service 0.7.0
+#### Added 
+- Added Settings to configure local and production.
+- Added clients to communicate with embedding service.
+
+### Embedding Service 0.2.0
+#### Added 
+- Added Settings to configure local and production.
+- Added Ollam class to embedding the transaction text
 
 ## Expense RAG 1.0.2 - 2026-07-02
 

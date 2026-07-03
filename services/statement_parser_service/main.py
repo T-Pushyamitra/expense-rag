@@ -1,5 +1,4 @@
 from fastapi import FastAPI, File, UploadFile
-from dotenv import load_dotenv
 import os
 
 from .statement_reader.statement_reader_factory import StatementReaderFactory
@@ -9,10 +8,8 @@ import shutil
 import uvicorn
 
 from common_lib import setup_logger
-
-load_dotenv()
-
 from pathlib import Path
+from .settings import SETTINGS
 
 SERVICE_VERSION = (
     Path(__file__).parent / "VERSION"
@@ -20,8 +17,8 @@ SERVICE_VERSION = (
     
 
 app = FastAPI(
-    title="Statement Parser Service",
-    description="A service for parsing financial statements",
+    title=SETTINGS.app_name,
+    description=SETTINGS.app_description,
     version=SERVICE_VERSION
 )
 
@@ -29,7 +26,7 @@ app = FastAPI(
 @app.get("/")
 def root():
     return {
-        "service": "statement-parser-service",
+        "service": SETTINGS.app_name,
         "status": "running"
     }
 
@@ -74,6 +71,7 @@ def run():
     uvicorn.run(
         "services.statement_parser_service.main:app",
         host="0.0.0.0",
-        port=int(os.getenv("PORT", 8001)),
-        reload=True
+        port=int(os.getenv("PORT", SETTINGS.app_port)),
+        reload=True,
+        reload_dirs=["services/statement_parser_service", "common_lib"]
     )

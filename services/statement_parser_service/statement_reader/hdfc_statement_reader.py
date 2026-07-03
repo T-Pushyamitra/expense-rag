@@ -11,7 +11,8 @@ from ..parser import StatementParserFactory, StatementParser
 from ..statement_reader.statement_reader_abstract import StatementReader
 
 from ..utils.constants import DEBIT, CREDIT
-
+from ..clients import HttpEmbeddingClient
+from ..settings import SETTINGS
 
 logger = logging.getLogger("exepnse-rag")
 
@@ -27,6 +28,7 @@ class HDFCStatementReader(StatementReader):
         self.file_path: str = file_path
         self._password: str = password
         self._parser: StatementParser = StatementParserFactory.get_parser(file_path.split('.')[-1])
+        self.embedding_client = HttpEmbeddingClient(base_url=SETTINGS.embedding_service_url)
     
     def find_date(self, text) -> Optional[str]:
         match = re.search(self.DATE_REGEX, text)
@@ -46,6 +48,7 @@ class HDFCStatementReader(StatementReader):
         
         for rows in table:
             transactions = self._parse_transaction_rows(rows)
+            message, error = self.embedding_client.embed_transactions(transactions)
             metadata["pages"][f"1-{page_number}"] = len(transactions)
             page_number += 1
             
