@@ -28,15 +28,30 @@ common-lib = {path = "common-lib"}
 httpx = "^0.28.1"
 pydantic-settings = "^2.14.2"
 sqlmodel = "^0.0.39"
+ruff = "^0.15.20"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.0"
 black = ">=24.0"
 mypy = ">=2.1"
+ruff = "^0.15.20"
+pytest-cov = "^7.1.0"
 
 [tool.mypy]
 strict = true
 disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["services"]
+
+python_files = [
+    "test_*.py",
+    "*_test.py"
+]
+
+python_functions = [
+    "test_*"
+]
 
 [tool.poetry.scripts]
 statement-parser = "services.statement_parser_service.main:run"
