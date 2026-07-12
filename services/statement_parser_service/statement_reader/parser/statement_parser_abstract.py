@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Iterator
+from collections.abc import Iterator
 
 
 class StatementParser(ABC):
@@ -8,5 +8,5 @@ class StatementParser(ABC):
         self.name = name
 
     @abstractmethod
-    def parse(self, file_path: str, password: str=None) -> Iterator[list]:
+    def parse(self, file_path: str, password: str=None, **kwargs) -> Iterator[list]:
         pass

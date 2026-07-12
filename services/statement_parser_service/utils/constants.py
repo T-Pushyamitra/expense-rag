@@ -1,2 +1,0 @@
-DEBIT = "DEBIT"
-CREDIT = "CREDIT"

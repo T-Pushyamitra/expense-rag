@@ -1,19 +1,25 @@
-from fastapi import FastAPI, File, UploadFile
 import os
-
-from .statement_reader.statement_reader_factory import StatementReaderFactory
-from pathlib import Path
-import tempfile
 import shutil
-import uvicorn
-
-from common_lib import setup_logger
+import tempfile
 from pathlib import Path
-from .settings import SETTINGS
 
-SERVICE_VERSION = (
-    Path(__file__).parent / "VERSION"
-).read_text().strip()
+import uvicorn
+from fastapi import Depends, FastAPI, File, UploadFile, status
+from pydantic import BaseModel
+
+from .clients import HttpEmbeddingClient
+from .dependency.embedding_client import get_embedding_client
+from .settings import SETTINGS
+from .statement_reader.common.statement_exceptions import (
+    CorruptedPdfException,
+    InvalidPasswordException,
+    StatementReaderException,
+    UnsupportedFileException,
+)
+from .statement_reader.common.statement_reader_factory import StatementReaderFactory
+from .statement_reader.common.transaction_utils import Transaction
+
+SERVICE_VERSION = (Path(__file__).parent / "VERSION").read_text().strip()
     
 
 app = FastAPI(
@@ -22,6 +28,16 @@ app = FastAPI(
     version=SERVICE_VERSION
 )
 
+
+#### API RESPONSE
+class ErrorModel(BaseModel):
+    message: str
+
+class TransactionResponse(BaseModel):
+    status: int
+    data: list[Transaction] | None = None
+    error: ErrorModel | None = None
+    
 
 @app.get("/")
 def root():
@@ -39,7 +55,8 @@ def health_check():
 
 
 @app.post("/parse")
-async def parse(file: UploadFile | None = File(...), password: str = 201150838):
+def parse(file: UploadFile | None = File(...), bank: str = None, password: str = 201150838,
+          client: HttpEmbeddingClient = Depends(get_embedding_client)):
     try:
         # create temporary directory
         temp_dir = Path(tempfile.mkdtemp())
@@ -53,15 +70,51 @@ async def parse(file: UploadFile | None = File(...), password: str = 201150838):
                 file.file,
                 buffer
             )
-        statementReader = StatementReaderFactory.get_reader('Hdfc', str(file_path), password)
-        metadata = statementReader.reader()
+        statementReader = StatementReaderFactory.get_reader(bank, str(file_path), password)
+        
+        transactions  = statementReader.reader()
 
-        return {
-            "Message": "Success",
-            "metadata": metadata
-        }
+        embedding_response = client.embed_transactions(transactions)
+        
+        if embedding_response['status'] != 200:
+            raise StatementReaderException("Failed to embedding the pdf file. Try again!")
+        
+        return TransactionResponse(
+            status=status.HTTP_200_OK,
+            data=transactions,
+        )
+
+    except UnsupportedFileException as e:
+        return TransactionResponse(
+                status=status.HTTP_400_BAD_REQUEST,
+                error=ErrorModel(
+                    message=f"{type(e).__name__} : {e.message}"
+                )
+            )
+        
+    except InvalidPasswordException as e:
+        return TransactionResponse(
+            status=status.HTTP_401_UNAUTHORIZED,
+            error=ErrorModel(
+                    message=f"{type(e).__name__} : {e.message}"
+            )
+        )
+
+    except CorruptedPdfException as e:
+        return TransactionResponse(
+                    status=status.HTTP_406_NOT_ACCEPTABLE,
+                    error=ErrorModel(
+                        message=f"{type(e).__name__} : {e.message}"
+                    )
+                )
+        
     except Exception as e:
-        return {"error": str(e)}
+        return TransactionResponse(
+            status=status.HTTP_400_BAD_REQUEST,
+            error=ErrorModel(
+                    message=f"{type(e).__name__} : {e.message}"
+            )
+        )
     finally:
         if temp_dir and temp_dir.exists():
             shutil.rmtree(temp_dir)
