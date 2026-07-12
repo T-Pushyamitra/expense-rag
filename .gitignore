@@ -15,3 +15,6 @@ __pycache__
 
 # Env files
 .env*
+
+# Personal files
+TODO*
