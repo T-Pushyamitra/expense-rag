@@ -1,21 +1,35 @@
 # Add New Service
 
-## Project Structure
+## Current Project Structure
 
-```
+```text
 expense-rag/
-│
-├── pyproject.toml          # Main Poetry configuration
-├── poetry.lock             # Locked dependencies
-├── CHANGELOG.md
-│
-├── common-lib/             # Shared Python library
+├── pyproject.toml
+├── ruff.toml
+├── docker-compose.yml
+├── CHANGELOG.MD
+├── common-lib/
 │   └── src/common_lib/
-│
-└── services/               # Microservices
-    ├── parser_service/
-    ├── rag_service/
-    └── auth_service/
+├── docs/
+├── infrastructure/
+├── services/
+│   ├── embedding_service/
+│   │   ├── main.py
+│   │   ├── VERSION
+│   │   ├── database/
+│   │   ├── ollama/
+│   │   ├── service/
+│   │   └── settings/
+│   ├── rag_service/
+│   │   └── main.py
+│   └── statement_parser_service/
+│       ├── main.py
+│       ├── VERSION
+│       ├── clients/
+│       ├── dependency/
+│       ├── resources/
+│       ├── settings/
+│       └── statement_reader/
 ```
 
 ---
@@ -24,8 +38,8 @@ expense-rag/
 
 ## Requirements
 
-* Python >= 3.10
-* Poetry
+- Python >= 3.10
+- Poetry
 
 Check:
 
@@ -34,140 +48,118 @@ python --version
 poetry --version
 ```
 
----
-
-## Install Project
-
-Clone repository:
-
-```bash
-git clone <repository-url>
-cd expense-rag
-```
-
 Install dependencies:
 
 ```bash
 poetry install
 ```
 
-Poetry creates the virtual environment and installs:
+The workspace uses:
 
-* FastAPI
-* Service dependencies
-* common-lib
-* Development tools
+- FastAPI and Uvicorn
+- shared package support from common-lib
+- Ruff for formatting and linting
+- pytest for tests
 
 ---
 
 # Running Services
 
-Each service is started from the root folder.
+Run services from the repository root.
 
-Example:
+## Parser service
 
 ```bash
-poetry run uvicorn services.parser_service.main:app --reload --port 8001
+poetry run python -m uvicorn services.statement_parser_service.main:app --reload --port 8001
 ```
 
-Example services:
+## Embedding service
 
 ```bash
-# Parser service
-poetry run uvicorn services.parser_service.main:app --reload --port 8001
+poetry run python -m uvicorn services.embedding_service.main:app --reload --port 8002
+```
 
-# RAG service
-poetry run uvicorn services.rag_service.main:app --reload --port 8002
+## RAG service
+
+```bash
+poetry run python -m uvicorn services.rag_service.main:app --reload --port 8003
+```
+
+You can also use the Poetry entry points defined in pyproject.toml:
+
+```bash
+poetry run statement-parser
+poetry run embedding-service
 ```
 
 ---
 
 # Adding a New Service
 
-## 1. Create service folder
+## 1. Create the service folder
 
-Inside `services`:
+Inside services:
 
 ```bash
 mkdir services/new_service
 ```
 
-Structure:
+Recommended layout:
 
-```
+```text
 services/
 └── new_service/
     ├── __init__.py
     ├── main.py
-    ├── api/
-    ├── services/
-    ├── models/
-    └── repositories/
+    ├── clients/
+    ├── dependency/
+    ├── service/
+    ├── settings/
+    └── tests/
 ```
 
----
+## 2. Add a FastAPI app
 
-## 2. Add FastAPI application
-
-`services/new_service/main.py`
-
-Example:
+Example in services/new_service/main.py:
 
 ```python
 from fastapi import FastAPI
-
 
 app = FastAPI()
 
 
 @app.get("/health")
 def health():
-    return {
-        "status": "ok"
-    }
+    return {"status": "ok"}
 ```
 
----
-
-## 3. Run new service
+## 3. Run the new service
 
 ```bash
-poetry run uvicorn services.new_service.main:app --reload --port 8003
+poetry run python -m uvicorn services.new_service.main:app --reload --port 8004
 ```
 
 ---
 
 # Adding Dependencies
 
-Do not edit `pyproject.toml` manually.
+Do not edit pyproject.toml manually.
 
-Use:
+Use Poetry:
 
 ```bash
 poetry add package-name
 ```
 
-Example:
-
-```bash
-poetry add sqlalchemy
-```
-
-For development dependencies:
+For development-only dependencies:
 
 ```bash
 poetry add --group dev package-name
 ```
 
-Example:
+When dependency changes are made, commit both files:
 
-```bash
-poetry add --group dev pytest
-```
-
-Commit:
-
-```
+```text
 pyproject.toml
 poetry.lock
 ```
@@ -176,29 +168,17 @@ poetry.lock
 
 # Updating common-lib
 
-`common-lib` is shared by all services.
+common-lib is shared by all services.
 
-Example:
-
-```
-common-lib/
-└── src/common_lib/
-    ├── logging.py
-    ├── middleware.py
-    └── config.py
-```
-
-After changing common-lib:
-
-Run:
+After changing shared code:
 
 ```bash
 poetry install
 ```
 
-Restart FastAPI services.
+Then restart the affected services.
 
-Test:
+You can verify the shared package import works with:
 
 ```bash
 poetry run python -c "import common_lib"
@@ -208,35 +188,20 @@ poetry run python -c "import common_lib"
 
 # Service Communication
 
-Services should not call each other directly from API routes.
+Keep service-to-service calls behind a client or service layer, not directly inside route handlers.
 
 Recommended flow:
 
-```
-API
- |
- v
-Service Layer
- |
- v
-Client
- |
- v
-Other Service
+```text
+API route
+  -> service layer
+  -> client/dependency
+  -> other service
 ```
 
-Example:
+Keep client implementations inside:
 
-```
-parser_service
-        |
-        v
-rag_service
-```
-
-Keep service clients inside:
-
-```
+```text
 services/<service>/clients/
 ```
 
@@ -244,21 +209,20 @@ services/<service>/clients/
 
 # Logging
 
-Use shared logger:
+Use the shared logger where possible:
 
 ```python
 from common_lib.logging import setup_logger
 
-logger = setup_logger("parser-service")
-
+logger = setup_logger("statement-parser")
 logger.info("Processing started")
 logger.debug("Debug information")
 logger.exception("Error happened")
 ```
 
-Configure using:
+Set the log level with:
 
-```
+```bash
 LOG_LEVEL=DEBUG
 ```
 
@@ -266,139 +230,87 @@ LOG_LEVEL=DEBUG
 
 # Database Changes
 
-Database code belongs inside the service:
+Database code should stay inside the service that owns it:
 
-```
+```text
 service/
-├── repositories/
-└── models/
+├── database/
+├── models/
+└── sessions/
 ```
 
-Do not put database logic in common-lib.
+Do not place database logic in common-lib.
 
 ---
 
 # Versioning
 
-Root application version:
-
-`pyproject.toml`
+The root package version is managed in pyproject.toml:
 
 ```toml
-version = "1.0.0"
+version = "1.3.0"
 ```
 
-Service versions are maintained separately if required.
+Service-specific version files are maintained separately if needed, for example:
 
-Example:
-
-```
-services/parser_service/VERSION
-```
-
-```
-0.4.0
+```text
+services/statement_parser_service/VERSION
 ```
 
 ---
 
-# When Code Changes Happen
+# Before You Commit
 
-## Dependency change
-
-Example:
+Run the checks below before creating a commit:
 
 ```bash
-poetry add new-package
-```
-
-Commit:
-
-```
-pyproject.toml
-poetry.lock
-```
-
----
-
-## common-lib change
-
-Steps:
-
-```bash
-poetry install
-```
-
-Restart services.
-
----
-
-## Service code change
-
-No Poetry action needed.
-
-Just restart:
-
-```bash
-poetry run uvicorn services.service_name.main:app --reload
-```
-
----
-
-# Before Commit
-
-Run:
-
-```bash
+poetry run ruff check .
+poetry run ruff format .
 poetry run pytest
 ```
 
-Format:
-
-```bash
-poetry run black .
-```
-
-Check types:
+If you changed typing-related code, you can also run:
 
 ```bash
 poetry run mypy .
+```
+
+## Recommended commit flow
+
+```bash
+git add <files>
+git commit -m "<clear commit message>"
+```
+
+If you changed formatting or linting config, include the relevant files in the commit:
+
+```text
+pyproject.toml
+poetry.lock
+ruff.toml
 ```
 
 ---
 
 # Deployment
 
-All services use the same:
+The project uses the same Poetry environment across services.
 
-```
-pyproject.toml
-poetry.lock
-```
-
-Deployment process:
-
-1. Install dependencies
+Install production dependencies with:
 
 ```bash
 poetry install --only main
 ```
 
-2. Start required services
-
-Example:
-
-```bash
-uvicorn services.parser_service.main:app
-```
+Then start the required services from the repository root.
 
 ---
 
 # Rules
 
-* Keep business logic inside service
-* Keep shared utilities inside common-lib
-* Do not duplicate logging/config code
-* Do not import code from another service
-* Communicate between services using APIs
-* Commit `poetry.lock` always
+- Keep business logic inside the service.
+- Keep shared utilities inside common-lib.
+- Do not duplicate logging or configuration code.
+- Do not import code from another service directly.
+- Prefer API-based communication between services.
+- Commit poetry.lock whenever dependencies change.

@@ -1,7 +1,5 @@
-import json
 
 import requests
-from ..database.models.transaction import Transaction
 
 
 class EmbeddingService:
@@ -15,7 +13,7 @@ class EmbeddingService:
             )
             response.raise_for_status()
             return response.json()["embedding"]
-        except Exception as e:
+        except Exception:
             return
 
     # def embed_transactions(self, free_text_list: list[str]):

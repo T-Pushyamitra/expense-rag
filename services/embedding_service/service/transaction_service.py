@@ -1,17 +1,17 @@
+import json
+
 from sqlalchemy.orm import Session
 
 from ..database.models.transaction import Transaction, TransactionCreate
-from ..settings import SETTINGS
-from ..ollama import EmbeddingService
 from ..database.models.transaction_embedding import TransactionEmbedding
-
-import json
+from ..ollama import EmbeddingService
+from ..settings import SETTINGS
 
 
 class TransactionService:
     def __init__(self, session):
-        embedding_service = EmbeddingService(base_url=SETTINGS.ollama_api_embedding_service_url)
-        session: Session = session
+        self.embedding_service = EmbeddingService(base_url=SETTINGS.ollama_api_embedding_service_url)
+        self.session: Session = session
 
     def create_transaction(self, _transaction: TransactionCreate) -> Transaction:
         transaction_create = TransactionCreate(
@@ -45,7 +45,7 @@ class TransactionService:
                 for transaction in transactions:
                     saved_transactions.append(self.save(transaction))
             return saved_transactions
-        except Exception as e:
+        except Exception:
             self.session.rollback()
             raise
 

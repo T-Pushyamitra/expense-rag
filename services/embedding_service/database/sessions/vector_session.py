@@ -1,6 +1,4 @@
-from sqlmodel import Session, create_engine
 
-from services.embedding_service.settings import SETTINGS
 
 vector_engine = ""
 

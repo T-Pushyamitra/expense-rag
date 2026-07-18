@@ -40,6 +40,7 @@ def contains(row: list[str], pattern):
 
     raise TypeError("pattern must be a list[str] or a regex string")
 
+
 def is_bad_row(row: list, bad_keywords: list) -> bool:
     """
     Check if any bad keywords present
@@ -87,6 +88,7 @@ def is_transaction_row(row: list, regex: str) -> bool:
         False
     """
     return contains(row, regex)
+
 
 def is_row_empty(row: list) -> bool:
     """

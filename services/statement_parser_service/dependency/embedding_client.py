@@ -1,4 +1,3 @@
-
 from collections.abc import Generator
 
 from services.statement_parser_service.clients.http_embedding_client import HttpEmbeddingClient

@@ -1,5 +1,4 @@
-from sqlmodel import SQLModel, Field
-from pgvector.sqlalchemy import Vector
+from sqlmodel import Field, SQLModel
 
 
 class Transaction(SQLModel, table=True):

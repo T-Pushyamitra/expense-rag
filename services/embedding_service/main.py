@@ -1,27 +1,18 @@
-from fastapi import Depends, FastAPI, status
-from contextlib import asynccontextmanager
-from dotenv import load_dotenv
-import os
-
-from pathlib import Path
-from sqlalchemy.orm import Session
-import uvicorn
-
-
-from pathlib import Path
-
-from .ollama import EmbeddingService
-from .settings import SETTINGS
-from pydantic import BaseModel
-from .database.sessions.metadata_session import get_metadata_session, init_db as metadata_init_db
-
-from .service.transaction_service import TransactionService
-from .service.query_service import QueryService
-from common_lib.enum.route_enum import RouteEnum
-
-import json
-from dataclasses import asdict
 import logging
+import os
+from pathlib import Path
+
+import uvicorn
+from common_lib.enum.route_enum import RouteEnum
+from fastapi import Depends, FastAPI, status
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from .database.sessions.metadata_session import get_metadata_session
+from .database.sessions.metadata_session import init_db as metadata_init_db
+from .service.query_service import QueryService
+from .service.transaction_service import TransactionService
+from .settings import SETTINGS
 
 logger = logging.getLogger("embedding-service")
 

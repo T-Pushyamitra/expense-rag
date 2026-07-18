@@ -1,8 +1,6 @@
-from sqlmodel import SQLModel, Session, create_engine
+from sqlmodel import Session, SQLModel, create_engine
 
 from services.embedding_service.settings import SETTINGS
-from services.embedding_service.database.models.transaction import Transaction
-from services.embedding_service.database.models.transaction_embedding import TransactionEmbedding
 
 # host=SETTINGS.metadata_host
 # port=SETTINGS.metadata_port

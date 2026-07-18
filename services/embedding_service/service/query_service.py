@@ -1,13 +1,12 @@
+
+import requests
 from sqlalchemy.orm import Session
 from sqlmodel import select
 
-from ..database.models.transaction import Transaction, TransactionCreate
-from ..settings import SETTINGS
-from ..ollama import EmbeddingService
+from ..database.models.transaction import Transaction
 from ..database.models.transaction_embedding import TransactionEmbedding
-
-import json
-import requests
+from ..ollama import EmbeddingService
+from ..settings import SETTINGS
 
 
 class QueryService:
@@ -16,13 +15,13 @@ class QueryService:
         self.base_url = SETTINGS.ollama_api_embedding_service_url
         self.session: Session = session
 
-    def search(self, query: str, filters: dict = {}, route: str = None, top_k: int = 5):
+    def search(self, query: str, filters: dict = None,  route: str = None, top_k: int = 5):
         # 1. Embed query
         query_embedding = self.embedding_service.embed(query)
         print(query, query_embedding)
 
         # 2. Build vector DB filter
-        where = filters
+        where = filters or {}
 
         if route:
             where["route"] = route

@@ -10,5 +10,6 @@ class InvalidPasswordException(StatementReaderException):
 class UnsupportedFileException(StatementReaderException):
     pass
 
+
 class CorruptedPdfException(StatementReaderException):
     pass

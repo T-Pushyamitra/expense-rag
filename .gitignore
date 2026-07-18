@@ -18,3 +18,7 @@ __pycache__
 
 # Personal files
 TODO*
+
+# IDE
+.Vscode
+.idea
