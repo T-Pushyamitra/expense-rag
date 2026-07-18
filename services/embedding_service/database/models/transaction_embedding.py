@@ -10,6 +10,4 @@ class TransactionEmbedding(SQLModel, table=True):
         index=True,
     )
 
-    embedding: list[float] = Field(
-        sa_type=Vector(768)
-    )
+    embedding: list[float] = Field(sa_type=Vector(768))

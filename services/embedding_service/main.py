@@ -25,10 +25,8 @@ import logging
 
 logger = logging.getLogger("embedding-service")
 
-SERVICE_VERSION = (
-    Path(__file__).parent / "VERSION"
-).read_text().strip()
-    
+SERVICE_VERSION = (Path(__file__).parent / "VERSION").read_text().strip()
+
 
 # @asynccontextmanager
 # async def lifespan(app: FastAPI):
@@ -45,33 +43,35 @@ app = FastAPI(
     # lifespan=lifespan
 )
 
+
 @app.on_event("startup")
 def startup():
     metadata_init_db()
-        
+
+
 @app.get("/")
 def root():
-    return {
-        "service": SETTINGS.app_name,
-        "status": "running"
-    }
+    return {"service": SETTINGS.app_name, "status": "running"}
 
 
 @app.get("/health")
 def health_check():
-    return {
-        "status": "ok"
-    }
+    return {"status": "ok"}
+
 
 #### API RESPONSE
 class ErrorModel(BaseModel):
     message: str
 
+
 class EmbeddingResponse(BaseModel):
     status: int
     error: ErrorModel | None = None
+
+
 class BatchEmbedRequest(BaseModel):
     transactions: list
+
 
 class Filters(BaseModel):
     amount_gt: int
@@ -79,23 +79,23 @@ class Filters(BaseModel):
     categories: list[str]
     months: list[str]
     semantic_query: list[str]
-    
+
+
 class QueryRequest(BaseModel):
     free_text: str
     filters: Filters | None = None
     model_name: str | None = None
     route: RouteEnum
 
+
 class QueryResponse(BaseModel):
-    result: str| list
+    result: str | list
     error: ErrorModel | None = None
-    
+
 
 @app.post("/transactions/embed/batch")
-def embed_transactions(request: BatchEmbedRequest, 
-               metadata_session: Session = Depends(get_metadata_session)
-               ):
-    
+def embed_transactions(request: BatchEmbedRequest, metadata_session: Session = Depends(get_metadata_session)):
+
     try:
         transactions = request.transactions
 
@@ -103,27 +103,31 @@ def embed_transactions(request: BatchEmbedRequest,
             return EmbeddingResponse(status=status.HTTP_200_OK)
         transaction_service = TransactionService(metadata_session)
         transaction_service.save_transactions(transactions=transactions)
-        return EmbeddingResponse(status=status.HTTP_200_OK )
+        return EmbeddingResponse(status=status.HTTP_200_OK)
     except Exception as e:
         logger.error(f"Failed to parse {e}")
-        return EmbeddingResponse(status=status.HTTP_400_BAD_REQUEST, error=ErrorModel(message="Failed to parse the embedding"))
+        return EmbeddingResponse(
+            status=status.HTTP_400_BAD_REQUEST, error=ErrorModel(message="Failed to parse the embedding")
+        )
+
 
 @app.post("/query/embed")
-def embed_query(request: QueryRequest, 
-               metadata_session: Session = Depends(get_metadata_session)
-               ):
-    
+def embed_query(request: QueryRequest, metadata_session: Session = Depends(get_metadata_session)):
+
     try:
         service = QueryService(metadata_session)
         results = service.search(request.free_text)
         return QueryResponse(result=results)
     except Exception as e:
         logger.error(f"Failed to parse {e}")
-        return EmbeddingResponse(status=status.HTTP_400_BAD_REQUEST, error=ErrorModel(message="Failed to parse the embedding"))
+        return EmbeddingResponse(
+            status=status.HTTP_400_BAD_REQUEST, error=ErrorModel(message="Failed to parse the embedding")
+        )
+
 
 @app.get("/model/version")
 def ollama_version():
-    
+
     try:
         service = QueryService()
         version = service.get_version()
@@ -131,6 +135,7 @@ def ollama_version():
     except Exception as e:
         logger.error(f"Failed to parse {e}")
         return EmbeddingResponse(status=status.HTTP_400_BAD_REQUEST, error=ErrorModel(message="Failed while embedding"))
+
 
 @app.get("/model/ps")
 def ollama_models():
@@ -142,11 +147,12 @@ def ollama_models():
         logger.error(f"Failed to parse {e}")
         return EmbeddingResponse(status=status.HTTP_400_BAD_REQUEST, error=ErrorModel(message="Failed while embedding"))
 
+
 def run():
     uvicorn.run(
         "services.embedding_service.main:app",
         host="0.0.0.0",
         port=int(os.getenv("PORT", SETTINGS.app_port)),
         reload=True,
-        reload_dirs=["services/embedding_service", "common_lib"]
+        reload_dirs=["services/embedding_service", "common_lib"],
     )
