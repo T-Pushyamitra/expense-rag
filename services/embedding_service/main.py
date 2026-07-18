@@ -13,6 +13,7 @@ from .database.sessions.metadata_session import init_db as metadata_init_db
 from .service.query_service import QueryService
 from .service.transaction_service import TransactionService
 from .settings import SETTINGS
+from .models.models import *
 
 logger = logging.getLogger("embedding-service")
 
@@ -48,41 +49,6 @@ def root():
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
-
-
-#### API RESPONSE
-class ErrorModel(BaseModel):
-    message: str
-
-
-class EmbeddingResponse(BaseModel):
-    status: int
-    error: ErrorModel | None = None
-
-
-class BatchEmbedRequest(BaseModel):
-    transactions: list
-
-
-class Filters(BaseModel):
-    amount_gt: int
-    amount_lt: int
-    categories: list[str]
-    months: list[str]
-    semantic_query: list[str]
-
-
-class QueryRequest(BaseModel):
-    free_text: str
-    filters: Filters | None = None
-    model_name: str | None = None
-    route: RouteEnum
-
-
-class QueryResponse(BaseModel):
-    result: str | list
-    error: ErrorModel | None = None
-
 
 @app.post("/transactions/embed/batch")
 def embed_transactions(request: BatchEmbedRequest, metadata_session: Session = Depends(get_metadata_session)):
