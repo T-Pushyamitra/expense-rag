@@ -2,12 +2,32 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: Python File",
+            "name": "FastAPI Debug statement_parser_service",
             "type": "debugpy",
             "request": "launch",
-            "program": "main.py",
-            "console": "integratedTerminal",
-            "python": "${workspaceFolder}/.rag-venv/bin/python"
+            "module": "uvicorn",
+            "args": [
+                "services.statement_parser_service.main:app",
+                "--reload",
+                "--port", "8001"
+            ],
+            "python": "${workspaceFolder}/.venv/bin/python",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "FastAPI Debug embedding_service",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "services.embedding_service.main:app",
+                "--reload",
+                "--port", "8002"
+            ],
+            "python": "${workspaceFolder}/.venv/bin/python",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
         }
     ]
 }
