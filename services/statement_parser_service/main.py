@@ -64,7 +64,7 @@ def parse(file: UploadFile | None = File(...), bank: str = None, password: str =
         # create temp file path
         file_path = temp_dir / file.filename
 
-        # save uploaded file
+        # save uploaded file    
         with file_path.open("wb") as buffer:
             shutil.copyfileobj(
                 file.file,
@@ -112,7 +112,7 @@ def parse(file: UploadFile | None = File(...), bank: str = None, password: str =
         return TransactionResponse(
             status=status.HTTP_400_BAD_REQUEST,
             error=ErrorModel(
-                    message=f"{type(e).__name__} : {e.message}"
+                    message=f"{type(e).__name__} : {str(e)}"
             )
         )
     finally:

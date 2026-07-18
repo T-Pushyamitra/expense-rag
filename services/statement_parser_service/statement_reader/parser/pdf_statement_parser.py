@@ -38,6 +38,10 @@ class PDFStatementParser(StatementParser):
                 
                 for page in pdf.pages:
                     table = page.extract_table(table_settings)
+                    
+                    if not table:
+                        continue
+                    
                     pages.append(table)
                     
             return pages
