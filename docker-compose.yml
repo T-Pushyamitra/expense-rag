@@ -28,7 +28,14 @@ services:
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - .infrastructure/postgres/parser-service-init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./infrastructure/postgres/parser-service-init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  adminer:
+    image: adminer
+    container_name: sql-adminer
+
+    ports:
+      - "8080:8080"
 
 volumes:
   postgres_data:

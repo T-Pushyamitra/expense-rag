@@ -1,6 +1,32 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## Expense RAG 1.3.0 - 2026-07-18
+
+### Statement Parser Service 1.0.1
+#### Fixed
+- minor: skipping null values in parsing pdf file
+
+### Embedding Service 1.0.1
+#### Changed
+- Added embedding service call for embedding text, get ollama version, ollama model list
+- Added rollback for the transactions
+
+### Common Lib 0.2.1
+#### Added
+- Added enum for route ('SQL', 'SEMANTIC', 'HYBRID' )
+
+### Infrastructure Changes
+#### Changed
+- Added new continer adminer to view db from UI in docker-compose
+
+## Expense RAG 1.2.0 - 2026-07-12
+
+### Statement Parser Service 1.0.0
+#### Changed
+- Changed the service design, each bank is consider as it's own package
+
 ## Expense RAG 1.1.0 - 2026-07-04
 
 ### Statement Parser Service 0.7.0
