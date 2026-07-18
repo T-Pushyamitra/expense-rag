@@ -1,16 +1,17 @@
 import psycopg2
 import json
 from datetime import datetime
+from ..settings import SETTINGS
 
 class TransactionDB:
 
     def __init__(self):
         self.conn = psycopg2.connect(
-            host="localhost",
-            port=5432,
-            database="transactions",
-            user="postgres",
-            password="password"
+            host=SETTINGS.metadata_host,
+            port=SETTINGS.metadata_port,
+            database=SETTINGS.metadata_database,
+            user=SETTINGS.metadata_user,
+            password=SETTINGS.metadata_password
         )
 
         self.cursor = self.conn.cursor()
